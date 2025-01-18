@@ -6,3 +6,10 @@ sky:
     database: sky_take_out
     username: root
     password: liu@gmail@123
+  alioss:
+    endpoint: null
+    access-key-id: null
+    access-key-secret: null
+    bucket-name: null
+  localfile:
+    root: "/Users/liujiaming/Documents/WorkSpace/temp/"
