@@ -13,6 +13,12 @@
         from dish
         where id = #{id}
     </delete>
+    <delete id="deleteByIds">
+        delete from dish where id in
+        <foreach collection="ids" open="(" close=")" separator="," item="id">
+            #{id}
+        </foreach>
+    </delete>
     <select id="pageQuery" resultType="com.sky.vo.DishVO">
         select d.id, d.name, d.category_id, d.price, d.image, d.description, d.status, d.create_time, d.update_time,
         d.create_user, d.update_user, c.name as categoryName
