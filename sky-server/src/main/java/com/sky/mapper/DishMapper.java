@@ -31,4 +31,14 @@ public interface DishMapper {
      * @return
      */
     Page<DishVO> pageQuery(DishPageQueryDTO dishPageQueryDTO);
+
+    /**
+     * 根据主键查询
+     *
+     * @param id
+     * @return
+     */
+    Dish getById(Long id);
+
+    void deleteById(Long id);
 }
