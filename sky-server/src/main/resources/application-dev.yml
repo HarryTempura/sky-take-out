@@ -13,3 +13,6 @@ sky:
     bucket-name: null
   localfile:
     root: "/Users/liujiaming/Documents/WorkSpace/temp/"
+  redis:
+    host: localhost
+    port: 6379
