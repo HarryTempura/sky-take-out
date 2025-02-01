@@ -1,6 +1,5 @@
 package com.sky.annotation;
 
-import com.sky.entity.Employee;
 import com.sky.enumeration.OperationType;
 
 import java.lang.annotation.ElementType;
@@ -16,6 +15,6 @@ import java.lang.annotation.Target;
 public @interface AutoFill {
 
     //数据库操作类型 Update，Insert
-    OperationType value();
+    OperationType operationType();
 
 }

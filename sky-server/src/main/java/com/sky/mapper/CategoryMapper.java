@@ -6,7 +6,6 @@ import com.sky.enumeration.OperationType;
 import com.sky.dto.CategoryPageQueryDTO;
 import com.sky.entity.Category;
 import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -19,7 +18,7 @@ public interface CategoryMapper {
      *
      * @param category
      */
-    @AutoFill(value = OperationType.INSERT)
+    @AutoFill(operationType = OperationType.INSERT)
     void insert(Category category);
 
     /**
@@ -43,7 +42,7 @@ public interface CategoryMapper {
      *
      * @param category
      */
-    @AutoFill(value = OperationType.UPDATE)
+    @AutoFill(operationType = OperationType.UPDATE)
     void update(Category category);
 
     /**

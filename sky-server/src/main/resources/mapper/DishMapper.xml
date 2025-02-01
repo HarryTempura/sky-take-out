@@ -38,6 +38,11 @@
         </set>
         where id=#{id}
     </update>
+    <update id="startOrStop" parameterType="com.sky.entity.Dish">
+        update dish
+        set status = #{status}
+        where id = #{id}
+    </update>
     <delete id="deleteById">
         delete
         from dish
@@ -81,5 +86,37 @@
                update_user
         from dish
         where id = #{id}
+    </select>
+    <select id="list" resultType="com.sky.entity.Dish">
+        select id, name, category_id, price, image, description, status, create_time, update_time, create_user,
+        update_user from dish
+        <where>
+            <if test="name != null">
+                and name like concat("%",#{name},"%")
+            </if>
+            <if test="categoryId != null">
+                and category_id=#{categoryId}
+            </if>
+            <if test="status != null">
+                and status=#{status}
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+    <select id="getBySetmealId" resultType="com.sky.entity.Dish">
+        select a.id,
+               a.name,
+               a.category_id,
+               a.price,
+               a.image,
+               a.description,
+               a.status,
+               a.create_time,
+               a.update_time,
+               a.create_user,
+               a.update_user
+        from dish a
+                 left join setmeal_dish sd on a.id = sd.dish_id
+        where sd.setmeal_id = #{setmealId}
     </select>
 </mapper>

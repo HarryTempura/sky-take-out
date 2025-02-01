@@ -23,7 +23,7 @@ public interface DishMapper {
     @Select("select count(id) from dish where category_id = #{categoryId}")
     Integer countByCategoryId(Long categoryId);
 
-    @AutoFill(value = OperationType.INSERT)
+    @AutoFill(operationType = OperationType.INSERT)
     void insert(Dish dish);
 
     /**
@@ -61,6 +61,31 @@ public interface DishMapper {
      *
      * @param dish
      */
-    @AutoFill(OperationType.UPDATE)
+    @AutoFill(operationType = OperationType.UPDATE)
     void update(Dish dish);
+
+    /**
+     * 条件查询菜品和口味
+     *
+     * @param dish
+     * @return
+     */
+    List<Dish> list(Dish dish);
+
+    /**
+     * 根据套餐id查询菜品
+     *
+     * @param setmealId
+     * @return
+     */
+    List<Dish> getBySetmealId(Long setmealId);
+
+    /**
+     * 起售停售菜品
+     *
+     * @param dish
+     */
+    @AutoFill(operationType = OperationType.UPDATE)
+    void startOrStop(Dish dish);
+
 }
