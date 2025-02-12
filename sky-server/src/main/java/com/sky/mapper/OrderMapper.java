@@ -5,6 +5,9 @@ import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.Orders;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Mapper
 public interface OrderMapper {
 
@@ -50,4 +53,12 @@ public interface OrderMapper {
      */
     Integer countStatus(Integer status);
 
+    /**
+     * 根据订单状态和下单时间获取超时订单
+     *
+     * @param status
+     * @param orderTime
+     * @return
+     */
+    List<Orders> getByStatusAndOrderTimeLT(Integer status, LocalDateTime orderTime);
 }
