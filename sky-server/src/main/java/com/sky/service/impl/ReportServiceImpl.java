@@ -5,15 +5,20 @@ import com.sky.entity.Orders;
 import com.sky.mapper.OrderMapper;
 import com.sky.mapper.UserMapper;
 import com.sky.service.ReportService;
-import com.sky.vo.OrderReportVO;
-import com.sky.vo.SalesTop10ReportVO;
-import com.sky.vo.TurnoverReportVO;
-import com.sky.vo.UserReportVO;
+import com.sky.service.WorkspaceService;
+import com.sky.vo.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -31,6 +36,8 @@ public class ReportServiceImpl implements ReportService {
     private OrderMapper orderMapper;
     @Resource
     private UserMapper userMapper;
+    @Resource
+    private WorkspaceService workspaceService;
 
     /**
      * 统计指定时间区间内的营业额数据
@@ -59,10 +66,7 @@ public class ReportServiceImpl implements ReportService {
             turnoverList.add(turnover);
         }
 
-        return TurnoverReportVO.builder()
-                .dateList(StringUtils.join(dateList, ","))
-                .turnoverList(StringUtils.join(turnoverList, ","))
-                .build();
+        return TurnoverReportVO.builder().dateList(StringUtils.join(dateList, ",")).turnoverList(StringUtils.join(turnoverList, ",")).build();
     }
 
     /**
@@ -98,11 +102,7 @@ public class ReportServiceImpl implements ReportService {
             newUserList.add(newUser);
         }
 
-        return UserReportVO.builder()
-                .dateList(StringUtils.join(dateList, ","))
-                .totalUserList(StringUtils.join(totalUserList, ","))
-                .newUserList(StringUtils.join(newUserList, ","))
-                .build();
+        return UserReportVO.builder().dateList(StringUtils.join(dateList, ",")).totalUserList(StringUtils.join(totalUserList, ",")).newUserList(StringUtils.join(newUserList, ",")).build();
     }
 
     /**
@@ -145,14 +145,7 @@ public class ReportServiceImpl implements ReportService {
             orderCompletionRate = (double) (totalValidOrderCount / (totalOrderCount));
         }
 
-        return OrderReportVO.builder()
-                .dateList(StringUtils.join(dateList, ","))
-                .orderCountList(StringUtils.join(orderCountList, ","))
-                .validOrderCountList(StringUtils.join(validOrderCountList, ","))
-                .totalOrderCount(totalOrderCount)
-                .validOrderCount(totalValidOrderCount)
-                .orderCompletionRate(orderCompletionRate)
-                .build();
+        return OrderReportVO.builder().dateList(StringUtils.join(dateList, ",")).orderCountList(StringUtils.join(orderCountList, ",")).validOrderCountList(StringUtils.join(validOrderCountList, ",")).totalOrderCount(totalOrderCount).validOrderCount(totalValidOrderCount).orderCompletionRate(orderCompletionRate).build();
     }
 
     /**
@@ -173,10 +166,74 @@ public class ReportServiceImpl implements ReportService {
         List<Integer> nums = salesTop10.stream().map(GoodsSalesDTO::getNumber).collect(Collectors.toList());
         String numList = StringUtils.join(nums, ",");
 
-        return SalesTop10ReportVO.builder()
-                .nameList(nameList)
-                .numberList(numList)
-                .build();
+        return SalesTop10ReportVO.builder().nameList(nameList).numberList(numList).build();
+    }
+
+    /**
+     * 导出运营数据报表
+     *
+     * @param response
+     */
+    @Override
+    public void exportBusinessData(HttpServletResponse response) {
+        //1. 查数据库获取营业数据--最近30天
+        LocalDate begin = LocalDate.now().minusDays(30);
+        LocalDate end = LocalDate.now().minusDays(1);
+
+        LocalDateTime beginTime = LocalDateTime.of(begin, LocalTime.MIN);
+        LocalDateTime endTime = LocalDateTime.of(end, LocalTime.MAX);
+
+        //查询概览数据
+        BusinessDataVO businessData = workspaceService.getBusinessData(beginTime, endTime);
+
+        //2. 将查询到的数据写入xlsx文件中
+        InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("template/运营数据报表模板.xlsx");
+
+        try {
+            //基于模板文件创建一个xlsx文件
+            XSSFWorkbook xlsxFile = new XSSFWorkbook(inputStream);
+
+            //获取标签页
+            XSSFSheet sheet1 = xlsxFile.getSheet("sheet1");
+            //填充数据--概览
+            sheet1.getRow(1).getCell(1).setCellValue("时间: " + begin + " 至 " + end);
+
+            XSSFRow row = sheet1.getRow(3);
+            row.getCell(2).setCellValue(businessData.getTurnover());
+            row.getCell(4).setCellValue(businessData.getOrderCompletionRate());
+            row.getCell(6).setCellValue(businessData.getNewUsers());
+
+            row = sheet1.getRow(4);
+            row.getCell(2).setCellValue(businessData.getValidOrderCount());
+            row.getCell(4).setCellValue(businessData.getUnitPrice());
+
+            //填充数据--明细
+            for (int i = 0; i < 30; i++) {
+                LocalDate date = begin.plusDays(i);
+                //查询某一天的营业数据
+                businessData = workspaceService.getBusinessData(LocalDateTime.of(date, LocalTime.MIN), LocalDateTime.of(date, LocalTime.MAX));
+
+                //获取某一行
+                row = sheet1.getRow(7 + i);
+                row.getCell(1).setCellValue(date.toString());
+                row.getCell(2).setCellValue(businessData.getTurnover());
+                row.getCell(3).setCellValue(businessData.getValidOrderCount());
+                row.getCell(4).setCellValue(businessData.getOrderCompletionRate());
+                row.getCell(5).setCellValue(businessData.getUnitPrice());
+                row.getCell(6).setCellValue(businessData.getNewUsers());
+            }
+
+            //3. 通过输出流将xlsx文件下载到客户端浏览器
+            ServletOutputStream outputStream = response.getOutputStream();
+            xlsxFile.write(outputStream);
+
+            //end. 关闭资源
+            outputStream.close();
+            xlsxFile.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     /**
